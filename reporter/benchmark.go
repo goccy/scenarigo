@@ -11,9 +11,8 @@ func FromB(b *testing.B) Reporter {
 }
 
 func (r *benchReporter) Run(name string, f func(b Reporter)) bool {
-	return r.B.Run(name, func(b *testing.B) {
-		f(FromB(b))
-	})
+	f(FromB(r.B))
+	return true
 }
 
 func (r *benchReporter) Parallel() {
