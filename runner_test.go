@@ -2,6 +2,7 @@ package scenarigo
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -134,5 +135,41 @@ func TestRunnerFail(t *testing.T) {
 		if ok {
 			t.Fatal("expected error but no error")
 		}
+	}
+}
+
+func Benchmark_Runner(b *testing.B) {
+	setup := func(b *testing.B) func() {
+		b.Helper()
+
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
+			_, _ = io.Copy(w, r.Body)
+		})
+
+		s := httptest.NewServer(mux)
+		if err := os.Setenv("TEST_ADDR", s.URL); err != nil {
+			b.Fatalf("unexpected error: %s", err)
+		}
+		return func() {
+			s.Close()
+			os.Unsetenv("TEST_ADDR")
+		}
+	}
+	teardown := setup(b)
+	defer teardown()
+
+	path := filepath.Join("testdata", "use_include.yaml")
+	b.ReportAllocs()
+	b.ResetTimer()
+	fmt.Println("b.N = ", b.N)
+	runner, err := NewRunner(WithScenarios(path))
+	if err != nil {
+		b.Fatal(err)
+	}
+	for i := 0; i < b.N; i++ {
+		runner.Run(context.FromB(b))
 	}
 }

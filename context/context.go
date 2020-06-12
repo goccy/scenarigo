@@ -37,6 +37,10 @@ func FromT(t *testing.T) *Context {
 	return newContext(context.Background(), context.Background(), reporter.FromT(t))
 }
 
+func FromB(b *testing.B) *Context {
+	return newContext(context.Background(), context.Background(), reporter.FromB(b))
+}
+
 // nolint:golint
 func newContext(ctx context.Context, reqCtx context.Context, r reporter.Reporter) *Context {
 	return &Context{
